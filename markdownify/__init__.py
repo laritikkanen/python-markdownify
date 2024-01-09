@@ -3,13 +3,11 @@ from textwrap import fill
 import re
 import six
 
-
 convert_heading_re = re.compile(r'convert_h(\d+)')
 line_beginning_re = re.compile(r'^', re.MULTILINE)
 whitespace_re = re.compile(r'[\t ]+')
-all_whitespace_re = re.compile(r'[\s]+')
+all_whitespace_re = re.compile(r'\s+')
 html_heading_re = re.compile(r'h[1-6]')
-
 
 # Heading styles
 ATX = 'atx'
@@ -36,7 +34,7 @@ def chomp(text):
     prefix = ' ' if text and text[0] == ' ' else ''
     suffix = ' ' if text and text[-1] == ' ' else ''
     text = text.strip()
-    return (prefix, suffix, text)
+    return prefix, suffix, text
 
 
 def abstract_inline_conversion(markup_fn):
@@ -46,12 +44,14 @@ def abstract_inline_conversion(markup_fn):
     that is returned by markup_fn. markup_fn is necessary to allow for
     references to self.strong_em_symbol etc.
     """
+
     def implementation(self, el, text, convert_as_inline):
         markup = markup_fn(self)
         prefix, suffix, text = chomp(text)
         if not text:
             return ''
         return '%s%s%s%s%s' % (prefix, markup, text, markup, suffix)
+
     return implementation
 
 
@@ -102,7 +102,7 @@ class MarkdownConverter(object):
     def process_tag(self, node, convert_as_inline, children_only=False):
         text = ''
 
-        # markdown headings or cells can't include
+        # Markdown headings or cells can't include
         # block elements (elements w/newlines)
         isHeading = html_heading_re.match(node.name) is not None
         isCell = node.name in ['td', 'th']
@@ -123,7 +123,7 @@ class MarkdownConverter(object):
                 # conditions is true:
                 # - el is the first element in its parent
                 # - el is the last element in its parent
-                # - el is adjacent to an nested node
+                # - el is adjacent to a nested node
                 can_extract = (not el.previous_sibling
                                or not el.next_sibling
                                or is_nested_node(el.previous_sibling)
@@ -152,7 +152,7 @@ class MarkdownConverter(object):
     def process_text(self, el):
         text = six.text_type(el) or ''
 
-        # dont remove any whitespace when handling pre or code in pre
+        # don't remove any whitespace when handling pre or code in pre
         if not (el.parent.name == 'pre'
                 or (el.parent.name == 'code'
                     and el.parent.parent.name == 'pre')):
@@ -329,7 +329,7 @@ class MarkdownConverter(object):
                 el = el.parent
             bullets = self.options['bullets']
             bullet = bullets[depth % len(bullets)]
-        return '%s %s\n' % (bullet, (text or '').strip())
+        return '%s %s\n' % (bullet, (text or '').strip().replace('\n', " "))
 
     def convert_p(self, el, text, convert_as_inline):
         if convert_as_inline:
@@ -365,7 +365,7 @@ class MarkdownConverter(object):
         return '\n\n' + text + '\n'
 
     def convert_td(self, el, text, convert_as_inline):
-        return ' ' + text.strip() + ' |'
+        return ' ' + text.strip().replace("\n", "  ") + ' |'
 
     def convert_th(self, el, text, convert_as_inline):
         return ' ' + text + ' |'
